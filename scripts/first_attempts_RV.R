@@ -99,4 +99,25 @@ alldat$Fare[is.na(alldat$Fare)] <- median(alldat$Fare, na.rm = T)
 # replace with "S" as most people
 # embarked from there
 table(alldat$Embarked)
+idx <- which(alldat$Embarked == "")
+alldat <- alldat %>% 
+  mutate(Embarked = replace(Embarked, idx, "S"))
+
+# if we use survived as integer the function 
+# will attempt to run a regression, use factor
+# to force it to run a classification
+train <- alldat %>% filter(dataset == "train")
+train <- train %>% mutate_if(is.character, as.factor)
+mytest <- alldat %>% filter(dataset == "test") %>% mutate_if(is.character, as.factor)
+# the model can't deal with character variables. 
+fit <- randomForest(as.factor(Survived) ~ Pclass + Sex + Age + SibSp + Parch + Fare +
+                      Embarked, data = train, importance = TRUE, ntree = 2000)
+
+
+mypred <- predict(fit, mytest)
+mysub <- tibble(PassengerId = testDat$PassengerId, Survived = mypred)
+write.csv(mysub, file = "myrandomforestprediction.csv", row.names = FALSE)
+
+
+# try feature engineering
 
